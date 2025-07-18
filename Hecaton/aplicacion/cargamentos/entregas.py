@@ -50,7 +50,7 @@ class ModuloEntregas:
         ctk.CTkLabel(frame_cargamentos, text="Cargamentos", font=("Arial", 14, "bold")).pack()
         self.treeview_cargamentos = ttk.Treeview(frame_cargamentos,
                                                  style="Custom.Treeview",
-                                                 columns=("ID", "Identidad"),
+                                                 columns=("ID", "Identidad","Fecha"),
                                                  show="headings",
                                                  selectmode="browse",
                                                  height=10)
@@ -58,6 +58,8 @@ class ModuloEntregas:
         self.treeview_cargamentos.column("ID",width=30)
         self.treeview_cargamentos.heading("Identidad", text="Identidad")
         self.treeview_cargamentos.column("Identidad",width=160)
+        self.treeview_cargamentos.heading("Fecha", text="Fecha")
+        self.treeview_cargamentos.column("Fecha",width=100)        
         self.treeview_cargamentos.pack(expand=True, fill="both", padx=5, pady=5)
         self.treeview_cargamentos.bind("<<TreeviewSelect>>", self._llenar_treeview_pedidos)
 
@@ -135,21 +137,32 @@ class ModuloEntregas:
         ).pack(pady=5, padx=10)
 
     def _llenar_treeview_cargamentos(self):
-        try:
-            db = DBConnection()
-            conexion = db.connect_mysql()
-            cursor = conexion.cursor()
+            try:
+                db = DBConnection()
+                conexion = db.connect_mysql()
+                cursor = conexion.cursor()
 
-            cursor.execute("SELECT c.id, c.identidad FROM cargamentos c WHERE c.activo = 'N'")
-            resultados = cursor.fetchall()
+                # Se obtiene la fecha sin formato desde la BD
+                cursor.execute("SELECT c.id, c.identidad, c.fecha_cierre FROM cargamentos c WHERE c.activo = 'N'")
+                resultados = cursor.fetchall()
 
-            self.treeview_cargamentos.delete(*self.treeview_cargamentos.get_children())
-            for fila in resultados:
-                self.treeview_cargamentos.insert("", "end", values=fila)
+                self.treeview_cargamentos.delete(*self.treeview_cargamentos.get_children())
+                
+                for fila in resultados:
+                    fecha_cruda = fila[2]
+                    
+                    # Se formatea la fecha en Python, manejando valores nulos
+                    if fecha_cruda:
+                        fecha_formateada = fecha_cruda.strftime('%d/%m/%Y %H:%M')
+                    else:
+                        fecha_formateada = ""
+                    
+                    fila_para_insertar = (fila[0], fila[1], fecha_formateada)
+                    self.treeview_cargamentos.insert("", "end", values=fila_para_insertar)
 
-            conexion.close()
-        except Exception as e:
-            messagebox.showerror("Error", f"Error al cargar cargamentos: {e}")
+                conexion.close()
+            except Exception as e:
+                messagebox.showerror("Error", f"Error al cargar cargamentos: {e}")
 
     def _llenar_treeview_pedidos(self, event=None, filtro=None):
         seleccion = self.treeview_cargamentos.focus()

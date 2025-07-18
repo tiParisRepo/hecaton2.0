@@ -188,6 +188,10 @@ class ModuloCargamentos:
             SELECT 
                 c.id AS id_cargamento, 
                 c.identidad AS descripcion,
+                case 
+                	when c.activo = 'S' then c.fecha_creacion
+                	else c.fecha_cierre
+                end as Fecha,           
                 c.activo,
                 r.id AS id_region, 
                 r.nombre AS nombre_region, 
@@ -232,11 +236,11 @@ class ModuloCargamentos:
         nodos = {}
 
         for fila in resultados:
-            (id_cargamento, descripcion, activo,
+            (id_cargamento, descripcion,Fecha,activo,
              id_region, nombre_region, ciudad, 
              id_empresa, nombre_empresa, valor, 
              peso, volumen,empresas) = fila
-
+            Fecha = Fecha.strftime("%d/%m/%Y %H:%M")
             # Formato
             valor_str = f"{valor:,.0f}"
             peso_str = f"{peso:.2f}"
@@ -257,7 +261,7 @@ class ModuloCargamentos:
 
                 nodo_cargamento = self.treeview_cargamentos.insert(
                     "", "end",
-                    text=f"{id_cargamento} - {descripcion}",
+                    text=f"{id_cargamento} - {descripcion} ({Fecha})",
                     values=(valor_total_str, peso_total_str, vol_total_str,emp_total_str),
                     tags=tags
                 )
@@ -304,7 +308,7 @@ class ModuloCargamentos:
         }
 
         for fila in resultados:
-            (id_cargamento, descripcion, activo,
+            (id_cargamento, descripcion,Fecha,activo,
              id_region, nombre_region, ciudad,
              id_empresa, nombre_empresa, valor,
              peso, volumen,empresas) = fila
